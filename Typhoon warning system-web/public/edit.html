@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset='utf-8' />
+    <title>Join local JSON data with vector tile geometries</title>
+    <meta name='viewport' content='initial-scale=1,maximum-scale=1,user-scalable=no' />
+    <link rel="stylesheet" href="lib/mapbox-gl.css">
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+        }
+
+        #map {
+            position: absolute;
+            top: 0;
+            bottom: 0;
+            width: 100%;
+        }
+        #zoom {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            z-index: 99;
+            background: rgba(0,0,0,0.4);
+            color: white;
+            padding: 5px;
+            border-radius: 5px;
+        }
+    </style>
+</head>
+
+<body>
+<div id='map'>
+    <div id="zoom">14.6</div>
+</div>
+<script src="lib/mapbox-gl.js"></script>
+<script src="https://api.mapbox.com/mapbox-gl-js/plugins/mapbox-gl-draw/v1.4.0/mapbox-gl-draw.js"></script>
+<link rel="stylesheet" href="https://api.mapbox.com/mapbox-gl-js/plugins/mapbox-gl-draw/v1.4.0/mapbox-gl-draw.css" type="text/css">
+<script>
+    const style = {
+        "version": 8,
+        "name": "indoor-map",
+        "sources": {},
+        "layers": [{
+            id: 'background',
+            type: 'background',
+            paint: {
+                'background-color': 'rgba(255,0,0,0)'
+            }
+        }]
+    }
+    var map = new mapboxgl.Map({
+        container: 'map',
+        zoom: 16.4,
+        minZoom: 16,
+        maxZoom: 22,
+        center: [113.887, 22.551],
+        pitch: 45,
+        bearing: -17.6,
+        antialias: true,
+        style
+    });
+    map.on('load', function() {
+        const draw = new MapboxDraw({
+            defaultMode: 'draw_polygon'
+        });
+        map.addControl(draw);
+
+        map.on('draw.update', e => {
+            console.log(e)
+        });
+    });
+
+
+    const getResult = () => {
+        if (closestVertex) {
+            const vertexPixel = map.getPixelFromCoordinate(closestVertex);
+            const squaredPixelDistance = squaredDistance(pixel, vertexPixel);
+            if (squaredPixelDistance <= squaredPixelTolerance) {
+                return {
+                    vertex: closestVertex,
+                    vertexPixel: [
+                        Math.round(vertexPixel[0]),
+                        Math.round(vertexPixel[1]),
+                    ],
+                    feature: closestFeature,
+                };
+            }
+        }
+        return null;
+    };
+</script>
+</body>
+</html>

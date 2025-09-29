@@ -1,0 +1,81 @@
+html, body, #app {
+  height: 100vh;
+  margin: 0;
+  padding: 0;
+  overflow: hidden;
+}
+
+/*定义整个滚动条高宽及背景：高宽分别对应横竖滚动条的尺寸*/
+::-webkit-scrollbar
+{
+  width:6px;
+  background-color:#F5F5F5;
+}
+/*定义滚动条轨道：内阴影+圆角*/
+::-webkit-scrollbar-track
+{
+  background-color:#F5F5F5;
+}
+/*定义滑块：内阴影+圆角*/
+::-webkit-scrollbar-thumb
+{
+  border-radius:10px;
+  background-color:#999;
+}
+
+ul, li, ol {
+  list-style: none;
+  margin: 0;
+}
+
+@keyframes typhoon-icon {
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(360deg);
+  }
+}
+
+.typhoon-icon {
+  margin-left: -11px !important;
+  margin-top: -11px !important;
+}
+
+.typhoon-icon .icon {
+  width: 22px !important;
+  height: 22px !important;
+  animation: typhoon-icon 2s linear infinite;
+}
+
+.typhoon-icon .icon svg {
+  width: 100%;
+  height: 100%;
+}
+
+.typhoon-name {
+  font-size: 10px;
+  background-color: rgba(0,0,0,0.6);
+  color: white;
+  padding: 3px 6px;
+  white-space: nowrap;
+  border-radius: 5px;
+  width: auto !important;
+  height: auto !important;
+  margin-left: 12px !important;
+  margin-top: -11px !important;
+}
+.typhoon-name:before {
+  content: " ";
+  width: 0;
+  height: 0;
+  border: 6px solid transparent;
+  border-right-color: rgba(0,0,0,0.6);
+  position: absolute;
+  top: 5px;
+  left: -12px;
+}
+
+.mapboxgl-ctrl-logo {
+  display: none !important;
+}

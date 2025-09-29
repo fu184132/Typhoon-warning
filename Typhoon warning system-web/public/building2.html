@@ -1,0 +1,262 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset='utf-8' />
+    <title>Join local JSON data with vector tile geometries</title>
+    <meta name='viewport' content='initial-scale=1,maximum-scale=1,user-scalable=no' />
+    <link rel="stylesheet" href="lib/mapbox-gl.css">
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+        }
+
+        #map {
+            position: absolute;
+            top: 0;
+            bottom: 0;
+            width: 100%;
+        }
+        #zoom {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            z-index: 99;
+            background: rgba(0,0,0,0.4);
+            color: white;
+            padding: 5px;
+            border-radius: 5px;
+        }
+    </style>
+</head>
+
+<body>
+<div id='map'>
+    <div id="zoom">14.6</div>
+</div>
+<script src="lib/mapbox-gl.js"></script>
+<script src="https://cdn.bootcdn.net/ajax/libs/Turf.js/6.5.0/turf.min.js"></script>
+<script>
+    const style = {
+        "version": 8,
+        "name": "indoor-map",
+        "sources": {},
+        "layers": [{
+            id: 'background',
+            type: 'background',
+            paint: {
+                'background-color': 'rgba(255,0,0,0)'
+            }
+        }]
+    }
+    var map = new mapboxgl.Map({
+        container: 'map',
+        zoom: 16.4,
+        minZoom: 16,
+        maxZoom: 22,
+        center: [113.887, 22.551],
+        pitch: 45,
+        bearing: -17.6,
+        antialias: true,
+        style
+    });
+    map.addControl(new mapboxgl.ScaleControl({}), 'bottom-right');
+    map.on('zoomend', function() {
+        document.getElementById('zoom').innerText = map.getZoom().toFixed(2)
+    })
+    map.on('load', function() {
+        const coords = [ [ [ 113.885632905452397, 22.552818892926712 ], [ 113.885771878698918, 22.553046303693751 ], [ 113.886302503822009, 22.553484279985827 ], [ 113.887106864127674, 22.554212836702447 ], [ 113.887443768967728, 22.554246527186454 ], [ 113.888075465542826, 22.55364430978485 ], [ 113.888214438789362, 22.553412687707311 ], [ 113.890008457062649, 22.551715529575528 ], [ 113.889991611820648, 22.55150075273999 ], [ 113.88778909642879, 22.549538282046655 ], [ 113.88754484041975, 22.549454055836641 ], [ 113.887182667716687, 22.549407731421134 ], [ 113.886353039548055, 22.54956776122016 ], [ 113.885784512630451, 22.549727791019198 ], [ 113.88556552448442, 22.550098386343258 ], [ 113.885632905452397, 22.552818892926712 ] ] ]
+        let coordsRooms = [
+            [ [ [ 113.88576766738845, 22.55132808900947 ], [ 113.88689629860265, 22.55132808900947 ], [ 113.888041775058838, 22.550081541101257 ], [ 113.887629066629771, 22.549550915978166 ], [ 113.887283739168709, 22.549525648115164 ], [ 113.886070881744502, 22.549727791019198 ], [ 113.885708709041452, 22.550089963722261 ], [ 113.88576766738845, 22.55132808900947 ] ] ],
+            [ [ [ 113.888269185825877, 22.550536362635334 ], [ 113.888134423889866, 22.550511094772332 ], [ 113.887805941670806, 22.550789041265379 ], [ 113.887014215296674, 22.55160603550252 ], [ 113.886129840091513, 22.551597612881515 ], [ 113.885936119808491, 22.551841868890559 ], [ 113.885986655534495, 22.552692553611703 ], [ 113.886331982995557, 22.552540946433677 ], [ 113.887090018885687, 22.552321958287639 ], [ 113.887511149935747, 22.551892404616567 ], [ 113.887991239332834, 22.551437583082489 ], [ 113.888505019213923, 22.550949071064405 ], [ 113.888715584738961, 22.550957493685406 ], [ 113.888724007359954, 22.55067954719236 ], [ 113.8883871025199, 22.550452136425321 ], [ 113.888269185825877, 22.550536362635334 ] ] ],
+            [ [ [ 113.886171953196524, 22.55290311913674 ], [ 113.887014215296674, 22.553736958615882 ], [ 113.887300584410724, 22.553602196679858 ], [ 113.887595376145768, 22.55366115502687 ], [ 113.889541001597095, 22.551791333164548 ], [ 113.889322013451064, 22.551504964050501 ], [ 113.88943150752408, 22.551353356872475 ], [ 113.889119870547034, 22.551142791347438 ], [ 113.888841924053978, 22.551125946105437 ], [ 113.887704870218784, 22.552246154698626 ], [ 113.887755405944802, 22.552473565465665 ], [ 113.887477459451745, 22.552642017885695 ], [ 113.886972102191663, 22.552515678570675 ], [ 113.886281447269539, 22.552768357200716 ], [ 113.886171953196524, 22.55290311913674 ] ] ]
+        ]
+
+        let lon = []
+        coords[0].forEach(([x, y]) => {
+            lon.push(x)
+        })
+        lon = lon.sort((a, b) => a - b)
+        const deltX = lon[lon.length - 1] - lon[0]
+        const coordsHighlight = [
+            coords[0].map(([x, y]) => [x - deltX, y])
+        ]
+        coordsRooms = coordsRooms.map(coordsRoom => {
+            return coordsRoom.map(_coords => {
+                return _coords.map(_coord => {
+                    const [x, y] = _coord
+                    return [x - deltX, y]
+                })
+            })
+        })
+
+        const floorNums = 10, floorHeight = 20, floorTop = 2
+        let features = [], featuresH = []
+        for (let i = 0; i <= floorNums; i++) {
+            const baseH = i * floorHeight,
+                topH = baseH + floorHeight,
+                h = topH - floorTop
+            features.push({
+                "type": "Feature",
+                "properties": {height: h, baseHeight: baseH, type: 'building', floor: i},
+                "geometry": { "type": "Polygon", "coordinates": coords }
+            })
+            features.push({
+                "type": "Feature",
+                "properties": {height: topH, baseHeight: h, type: 'top', floor: i},
+                "geometry": { "type": "Polygon", "coordinates": coords }
+            })
+            const feature = {
+                "type": "Feature",
+                "properties": {height: baseH + floorTop, baseHeight: baseH, floor: i, type: -1},
+                "geometry": { "type": "Polygon", "coordinates": coordsHighlight }
+            }
+            featuresH.push(feature)
+            const featureWall = turf.difference(turf.buffer(feature, 0.001), feature)
+            featureWall.properties = {height: h, baseHeight: baseH, floor: i, type: -1}
+            featuresH.push(featureWall)
+            coordsRooms.forEach((coordsRoom, index) => {
+                featuresH.push({
+                    "type": "Feature",
+                    "properties": {height: h, baseHeight: baseH + floorTop, floor: i, type: index, id: 'floor'+ i + index},
+                    "geometry": { "type": "Polygon", "coordinates": coordsRoom }
+                })
+            })
+        }
+
+        map.addSource('building', {
+            type: 'geojson',
+            data: {
+                "type": "FeatureCollection",
+                "features": features
+            }
+        });
+        map.addSource('building-hightlight', {
+            type: 'geojson',
+            data: {
+                "type": "FeatureCollection",
+                "features": featuresH
+            }
+        });
+
+        map.loadImage('data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABQAAAAKCAMAAACDi47UAAAAGXRFWHRTb2Z0d2FyZQBBZG9iZSBJbWFnZVJlYWR5ccllPAAAAyJpVFh0WE1MOmNvbS5hZG9iZS54bXAAAAAAADw/eHBhY2tldCBiZWdpbj0i77u/IiBpZD0iVzVNME1wQ2VoaUh6cmVTek5UY3prYzlkIj8+IDx4OnhtcG1ldGEgeG1sbnM6eD0iYWRvYmU6bnM6bWV0YS8iIHg6eG1wdGs9IkFkb2JlIFhNUCBDb3JlIDUuMy1jMDExIDY2LjE0NTY2MSwgMjAxMi8wMi8wNi0xNDo1NjoyNyAgICAgICAgIj4gPHJkZjpSREYgeG1sbnM6cmRmPSJodHRwOi8vd3d3LnczLm9yZy8xOTk5LzAyLzIyLXJkZi1zeW50YXgtbnMjIj4gPHJkZjpEZXNjcmlwdGlvbiByZGY6YWJvdXQ9IiIgeG1sbnM6eG1wPSJodHRwOi8vbnMuYWRvYmUuY29tL3hhcC8xLjAvIiB4bWxuczp4bXBNTT0iaHR0cDovL25zLmFkb2JlLmNvbS94YXAvMS4wL21tLyIgeG1sbnM6c3RSZWY9Imh0dHA6Ly9ucy5hZG9iZS5jb20veGFwLzEuMC9zVHlwZS9SZXNvdXJjZVJlZiMiIHhtcDpDcmVhdG9yVG9vbD0iQWRvYmUgUGhvdG9zaG9wIENTNiAoV2luZG93cykiIHhtcE1NOkluc3RhbmNlSUQ9InhtcC5paWQ6ODEwRDA1MjcyOUQxMTFFRTkxMjdDMDAyNjdBOUYwNjQiIHhtcE1NOkRvY3VtZW50SUQ9InhtcC5kaWQ6ODEwRDA1MjgyOUQxMTFFRTkxMjdDMDAyNjdBOUYwNjQiPiA8eG1wTU06RGVyaXZlZEZyb20gc3RSZWY6aW5zdGFuY2VJRD0ieG1wLmlpZDo4MTBEMDUyNTI5RDExMUVFOTEyN0MwMDI2N0E5RjA2NCIgc3RSZWY6ZG9jdW1lbnRJRD0ieG1wLmRpZDo4MTBEMDUyNjI5RDExMUVFOTEyN0MwMDI2N0E5RjA2NCIvPiA8L3JkZjpEZXNjcmlwdGlvbj4gPC9yZGY6UkRGPiA8L3g6eG1wbWV0YT4gPD94cGFja2V0IGVuZD0iciI/PhZsMswAAAI0UExURbWggqmWf7CbgLWfgLSghLSega2XepuMeLCafpKCb7CafMWukZ6PerWhgayUd6yUeK2Xe7+kg66afLmjg7ulg7Wdgb+nibaegbSghayZfcq1l8u2lsSqirSegq2Yfcizla2Zf8ewjqybg7WggMSsiq2ZfrWghLWihpGDc8OqjK6bf7OegLCehraef7OegYl2Y6+dgrKdhJqJdq2bg458aMOpicClgrqkio9/a6qXfaeWfrejh7qnjLOcfbOaeamVfrGbfbSfhaKQebCaerGcgWVdVbKbf8uzkMmykaSTeMWujsiykqqUdsevjLihgqeVgqiUg6uTdbOce8OriVBLRllSS8ixlK6Xeq6ZgMCoh8WvkbSafcivirahgqmXgMKskbehhK+dgbWiib2nhr6nhqmXgayVdq+Zga+afbiig7ehgbaggKeUfrGdgK2ZfLSff6ubh6yYfrSgg7WhiZmHdcSrjJiKdrOfgYV1Y76lgbKcf7KghLKegLCbg9jAnLGgidW8mLCafcGqiaqYgcCsirqjhrCZea+ficqzl7yjgr6oibahhqCQfLqkh7Gdf7efgKaOc7Seg62VeKGQerqkhcSrjcOqiZiHcrSggaWUe6CPfKqahYJyYpGCcJ6PfMCnhbGafebNqYt6aayTds66nrKdgq6Ye8SqiL6mg6aSer6niLaig5qJdbahhLGafMStjqyXeHFnW66Yep+Pe8GujZWEb5GCbJGAbKOPebeli5WDb7ukgql+iIEAAADgSURBVHjaANIALf8AVHgoMnR2Cay2nbovt5e1NDicolUAQn6KGyG0Y0d1SE2nllNkeSSFXEkAmlYYYFgqDWlnmJStsFFAsg+jFJkAB0s3PLlzRIEGLhNrbz2GFxCQgowABxpiJwQZIFtDHS0+BSOuEo4VXwkADKRhADBoXQOPi6YAAAKgZgSSapMAnh8CfSZBO20KenyrA0YGCAVMu14As4gle3GlkSseDo1OCghSV25yhDoAOaFaShYLryk1EZUcNlmJn6iqgHcARSxsUJt/h3A/AWUzIoNPAam4MbECDAD9/kTiL2dgUgAAAABJRU5ErkJggg==', function (error, image) {
+            if (error) throw error;
+            map.addImage('building-wl', image);
+
+            map.addLayer({
+                'id': '3d-buildings',
+                'source': 'building',
+                'type': 'fill-extrusion',
+                filter: ['==', ['get', 'type'], 'building'],
+                'paint': {
+                    'fill-extrusion-color': '#ffffff',
+                    'fill-extrusion-pattern': 'building-wl',
+                    'fill-extrusion-height': ['get', 'height'],
+                    'fill-extrusion-base': ['get', 'baseHeight'],
+                    'fill-extrusion-opacity': 1
+                }
+            });
+            map.addLayer({
+                'id': '3d-buildings-top',
+                'source': 'building',
+                'type': 'fill-extrusion',
+                filter: ['==', ['get', 'type'], 'top'],
+                'paint': {
+                    'fill-extrusion-color': [
+                        'match',
+                        ['get', 'floor'],
+                        floorNums, '#bbb4ab',
+                        '#ffffff'
+                    ],
+                    'fill-extrusion-height': ['get', 'height'],
+                    'fill-extrusion-base': ['get', 'baseHeight'],
+                    'fill-extrusion-opacity': 1
+                }
+            });
+
+            map.addLayer({
+                'id': '3d-buildings-highlight',
+                'source': 'building-hightlight',
+                'type': 'fill-extrusion',
+                filter: ['==', ['get', 'floor'], -1],
+                'paint': {
+                    'fill-extrusion-color': [
+                        'match',
+                        ['get', 'type'],
+                        0, '#f00',
+                        1, '#0f0',
+                        2, '#00f',
+                        '#bbb4ab'
+                    ],
+                    'fill-extrusion-height': ['get', 'height'],
+                    'fill-extrusion-base': ['get', 'baseHeight'],
+                    'fill-extrusion-opacity': 0.5
+                }
+            });
+            map.addLayer({
+                'id': '3d-buildings-highlight-click',
+                'source': 'building-hightlight',
+                'type': 'fill-extrusion',
+                filter: ['==', ['get', 'id'], ''],
+                'paint': {
+                    'fill-extrusion-color': '#0ff',
+                    'fill-extrusion-height': ['get', 'height'],
+                    'fill-extrusion-base': ['get', 'baseHeight'],
+                    'fill-extrusion-opacity': 1
+                }
+            });
+            map.addLayer({
+                'id': '3d-buildings-highlight-bottom',
+                'source': 'building-hightlight',
+                'type': 'fill-extrusion',
+                filter: ['==', ['get', 'floor'], -1],
+                'paint': {
+                    'fill-extrusion-color': [
+                        'match',
+                        ['get', 'type'],
+                        -1, '#bbb4ab',
+                        '#0f0',
+                    ],
+                    'fill-extrusion-height': ['get', 'height'],
+                    'fill-extrusion-base': ['get', 'baseHeight'],
+                    'fill-extrusion-opacity': 1
+                }
+            });
+
+            map.on('click', e => {
+                const features = map.queryRenderedFeatures(e.point);
+                if(features.length === 0) {
+                    map.setFilter('3d-buildings', ['!=', ['get', 'floor'], -1])
+                    map.setFilter('3d-buildings-highlight', ['==', ['get', 'floor'], -1])
+                    map.setFilter('3d-buildings-highlight-bottom', ['==', ['get', 'floor'], -1])
+                }
+            })
+            map.on('click', '3d-buildings-highlight', e => {
+                const { properties } = e.features[0]
+                if(properties.type !== -1) {
+                    map.setFilter('3d-buildings-highlight-click', ['==', ['get', 'id'], properties.id])
+                    let html = ``
+                    for (const propertiesKey in properties) {
+                        html += `<div><b>${propertiesKey}:</b>${properties[propertiesKey]}</div>`
+                    }
+                    const popup = new mapboxgl.Popup()
+                        .setLngLat(e.lngLat)
+                        .setHTML(html)
+                        .addTo(map);
+                    popup.on('close', () => {
+                        map.setFilter('3d-buildings-highlight-click', ['==', ['get', 'id'], ''])
+                    })
+                }
+            })
+            map.on('click', '3d-buildings', e => {
+                const { properties } = e.features[0]
+                map.setFilter('3d-buildings', ['!=', ['get', 'floor'], properties.floor])
+                map.setFilter('3d-buildings-highlight', ['all', ['==', ['get', 'floor'], properties.floor], ['!=', ['get', 'type'], -1]])
+                map.setFilter('3d-buildings-highlight-bottom', ['all', ['==', ['get', 'floor'], properties.floor], ['==', ['get', 'type'], -1]])
+            })
+        })
+    });
+</script>
+</body>
+</html>

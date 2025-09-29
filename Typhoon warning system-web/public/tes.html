@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Title</title>
+</head>
+<body>
+<script>
+    const editableLayers = new L.FeatureGroup();
+    map.addLayer(editableLayers);
+    const options = {
+        position: 'topright',
+        draw: {
+            ...,
+            edit: {
+                featureGroup: editableLayers,
+                remove: false
+            }
+        }
+    };
+    const drawControl = new L.Control.Draw(options);
+    map.addControl(drawControl);
+
+    import MapboxDraw from "@mapbox/mapbox-gl-draw";
+    import '@mapbox/mapbox-gl-draw/dist/mapbox-gl-draw.css'
+
+    const Draw = new MapboxDraw();
+    map.addControl(Draw, 'top-left');
+</script>
+</body>
+</html>
